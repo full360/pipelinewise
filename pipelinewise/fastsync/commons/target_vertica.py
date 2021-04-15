@@ -86,26 +86,27 @@ class FastSyncTargetVertica:
                     f'{self.BATCHED_AT_COLUMN} TIMESTAMP',      #these thre columns are coming created in taps.
                     f'{self.DELETED_AT_COLUMN} VARCHAR']
 
-        # We need the sort the columns for some taps( for now tap-s3-csv)
+        # We need the sort the columns for some taps (for now tap-s3-csv)
 
         if sort_columns:
             columns = columns.sort()
 
         sql_columns = ','.join(columns)
 
-        #when primary keys exits what to do.
+        # when primary keys exists what to do.
         if primary_key:
             sql_primary_keys = ','.join(primary_key)
         else:
             sql_primary_keys = None
 
         if primary_key:
+            # @TODO - Confirm Create Table if not exists and other formatting here. 
             sql = f'CREATE TABLE IF NOT EXISTS {target_schema}."{target_table}" (' \
                 f'{sql_columns}' \
                 f'{f", PRIMARY KEY ({sql_primary_keys}))" if primary_key else ")"}'
         else:
             sql = f'CREATE TABLE IF NOT EXISTS {target_schema}."{target_table}" (' \
-                f'{sql_columns}')'            
+                f'{sql_columns}'
 
         self.query(sql)
 
@@ -119,6 +120,7 @@ class FastSyncTargetVertica:
             with connection.cursor() as cur:
                 inserts = 0
 
+                # @TODO - Confirm Copy statement format
                 copy_sql = f"""COPY {target_schema}."{target_table}"
                 FROM STDIN WITH (FORMAT CSV, HEADER {'TRUE' if skip_csv_header else 'FALSE'}, ESCAPE '"')
                 """
@@ -138,6 +140,7 @@ class FastSyncTargetVertica:
         if role:
             table_dict = utils.tablename_to_dict(table_name)
             target_table = table_dict.get('table_name') if not is_temporary else table_dict.get('temp_table_name')
+            # @TODO - Confirm the Vertica Grant statement formats
             sql = 'GRANT SELECT ON {}."{}" TO GROUP {}'.format(target_schema, target_table, role)
             self.query(sql)
 
@@ -190,7 +193,8 @@ class FastSyncTargetVertica:
         temp_table = table_dict.get('temp_table_name')
 
         # Swap tables and drop the temp tamp
-        self.query('DROP TABLE IF EXISTS {}."{}"'.format(schema, target_table)
+        # @TODO - Confirm these queries are the order of operations for Vertica
+        self.query('DROP TABLE IF EXISTS {}."{}"'.format(schema, target_table))
         self.query('ALTER TABLE {}."{}" RENAME TO "{}"'.format(schema, temp_table, target_table))
 
     def __apply_transformations(self, transformations, target_schema, table_name):

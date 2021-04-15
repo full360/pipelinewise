@@ -73,15 +73,16 @@ def sync_table(table_name: str, args: Namespace) -> Union[bool, str]:
                               is_temporary=True,
                               sort_columns=True)
 
-        # Load into Postgres table
-        postgres.copy_to_table(filepath, target_schema, table_name, size_bytes, is_temporary=True, skip_csv_header=True)
+        # Load into Vertica table
+        vertica.copy_to_table(filepath, target_schema, table_name, size_bytes, is_temporary=True, skip_csv_header=True)
         os.remove(filepath)
 
         # Obfuscate columns
-        postgres.obfuscate_columns(target_schema, table_name, is_temporary=True)
+        # @TODO - Implement util
+        vertica.obfuscate_columns(target_schema, table_name, is_temporary=True)
 
-        # Create target table and swap with the temp table in Postgres
-        postgres.swap_tables(target_schema, table_name)
+        # Create target table and swap with the temp table in Vertica
+        vertica.swap_tables(target_schema, table_name)
 
         # Get bookmark
         bookmark = utils.get_bookmark_for_table(table_name, args.properties, s3_csv)
@@ -96,8 +97,8 @@ def sync_table(table_name: str, args: Namespace) -> Union[bool, str]:
 
         # Table loaded, grant select on all tables in target schema
         grantees = utils.get_grantees(args.target, table_name)
-        utils.grant_privilege(target_schema, grantees, postgres.grant_usage_on_schema)
-        utils.grant_privilege(target_schema, grantees, postgres.grant_select_on_schema)
+        utils.grant_privilege(target_schema, grantees, vertica.grant_usage_on_schema)
+        utils.grant_privilege(target_schema, grantees, vertica.grant_select_on_schema)
 
         return True
 
@@ -125,8 +126,9 @@ def main_impl():
         """, args.tables, len(args.tables), pool_size)
 
     # Create target schemas sequentially, Postgres doesn't like it running in parallel
-    postgres_target = FastSyncTargetPostgres(args.target, args.transform)
-    postgres_target.create_schemas(args.tables)
+    # @TODO - Determine if Vertica is ok with parallelism
+    vertica_target = FastSyncTargetVertica(args.target, args.transform)
+    vertica_target.create_schemas(args.tables)
 
     # Start loading tables in parallel in spawning processes
     with multiprocessing.Pool(pool_size) as proc:
