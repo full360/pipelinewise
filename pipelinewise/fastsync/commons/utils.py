@@ -73,6 +73,28 @@ def tablename_to_dict(table, separator='.'):
         'temp_table_name': '{}_temp'.format(table_name)
     }
 
+def tablename_to_dict_vertica(table, separator='.'):
+    """Derive catalog, schema and table names from fully qualified table names"""
+    catalog_name = None
+    schema_name = None
+    table_name = table
+
+    split_parts = table.split(separator)
+    # no need to compare
+    catalog_name = split_parts[0]
+    schema_name = split_parts[1]
+    table_name = '_'.join(split_parts[2:])
+
+    if catalog_name is None:
+        catalog_name = ""
+
+    return {
+        'catalog_name': catalog_name,
+        'schema_name': schema_name,
+        'table_name': table_name.lower(),
+        'temp_table_name': '{}_temp'.format(table_name.lower())
+    }
+
 
 def get_tables_from_properties(properties: Dict) -> set:
     """Get list of selected tables with schema names from properties json
