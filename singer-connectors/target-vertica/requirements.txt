@@ -1,0 +1,1 @@
+# git path to the target-vertica singer connector.

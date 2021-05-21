@@ -93,7 +93,7 @@ def assert_state_file_valid(target_name, tap_name, log_path=None):
 
 
 def assert_cols_in_table(query_runner_fn: callable, table_schema: str, table_name: str, columns: List[str]):
-    """Fetches the given table's columns from information_schema and
+    """Fetches the given table's columns from information_schema/ v_catalog and
     tests if every given column is in the result
 
     :param query_runner_fn: method to run queries
@@ -101,7 +101,8 @@ def assert_cols_in_table(query_runner_fn: callable, table_schema: str, table_nam
     :param table_name: table with the columns
     :param columns: list of columns to check if there are in the table's columns
     """
-    sql = db.sql_get_columns_for_table(table_schema, table_name)
+    default_schema = "v_catalog" if "vertica" in query_runner_fn.__name__ else "information_schema"
+    sql = db.sql_get_columns_for_table(table_schema, table_name, default_schema)
     result = query_runner_fn(sql)
     cols = [res[0] for res in result]
     try:

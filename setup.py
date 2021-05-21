@@ -34,7 +34,8 @@ setup(name='pipelinewise',
           'pymongo>=3.10,<3.12',
           'tzlocal>=2.0,<2.2',
           'slackclient>=2.7,<2.10',
-          'psutil==5.8.0'
+          'psutil==5.8.0',
+          'vertica-python==1.0.1'
       ],
       extras_require={
           'test': [
@@ -58,6 +59,7 @@ setup(name='pipelinewise',
               'postgres-to-postgres=pipelinewise.fastsync.postgres_to_postgres:main',
               's3-csv-to-snowflake=pipelinewise.fastsync.s3_csv_to_snowflake:main',
               's3-csv-to-postgres=pipelinewise.fastsync.s3_csv_to_postgres:main',
+              's3-csv-to-vertica=pipelinewise.fastsync.s3_csv_to_vertica:main',
               's3-csv-to-redshift=pipelinewise.fastsync.s3_csv_to_redshift:main',
               'mongodb-to-snowflake=pipelinewise.fastsync.mongodb_to_snowflake:main',
               'mongodb-to-postgres=pipelinewise.fastsync.mongodb_to_postgres:main',

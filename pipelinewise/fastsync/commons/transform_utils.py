@@ -30,6 +30,7 @@ class SQLFlavor(Enum):
     """
     SNOWFLAKE = 'snowflake'
     POSTGRES = 'postgres'
+    VERTICA = 'vertica'
 
 
 # pylint: disable=too-few-public-methods
@@ -167,6 +168,9 @@ class TransformationHelper:
 
                 elif sql_flavor == SQLFlavor.POSTGRES:
                     operator = '~'
+                
+                elif sql_flavor == SQLFlavor.VERTICA:
+                    operator = '~'
 
                 else:
                     raise NotImplementedError(f'regex_match conditional transformation in {sql_flavor.value} SQL '
@@ -187,7 +191,7 @@ class TransformationHelper:
         if sql_flavor == SQLFlavor.SNOWFLAKE:
             column = f'"{col.upper()}"'
 
-        elif sql_flavor == SQLFlavor.POSTGRES:
+        elif sql_flavor == SQLFlavor.POSTGRES or sql_flavor == SQLFlavor.VERTICA:
             column = f'"{col.lower()}"'
 
         else:
@@ -211,6 +215,9 @@ class TransformationHelper:
             trans = f'{column} = SHA2({column}, 256)'
 
         elif sql_flavor == SQLFlavor.POSTGRES:
+            trans = f'{column} = ENCODE(DIGEST({column}, \'sha256\'), \'hex\')'
+
+        elif sql_flavor == SQLFlavor.VERTICA:
             trans = f'{column} = ENCODE(DIGEST({column}, \'sha256\'), \'hex\')'
 
         else:
@@ -237,9 +244,15 @@ class TransformationHelper:
         if sql_flavor == SQLFlavor.SNOWFLAKE:
             trans = '{0} = CONCAT(SUBSTRING({0}, 1, {1}), SHA2(SUBSTRING({0}, {1} + 1), 256))'.format(
                 column, skip_first_n)
+
         elif sql_flavor == SQLFlavor.POSTGRES:
             trans = '{0} = CONCAT(SUBSTRING({0}, 1, {1}), ENCODE(DIGEST(SUBSTRING({0}, {1} + 1), ' \
                     '\'sha256\'), \'hex\'))'.format(column, skip_first_n)
+
+        elif sql_flavor == SQLFlavor.VERTICA:
+            trans = '{0} = CONCAT(SUBSTRING({0}, 1, {1}), ENCODE(DIGEST(SUBSTRING({0}, {1} + 1), ' \
+                    '\'sha256\'), \'hex\'))'.format(column, skip_first_n)
+
         else:
             raise NotImplementedError(f'HASH-SKIP-FIRST-{skip_first_n} transformation in {sql_flavor.value} SQL flavor '
                                       f'not implemented!')
@@ -264,6 +277,15 @@ class TransformationHelper:
                     f'TO_TIME({column}))'
 
         elif sql_flavor == SQLFlavor.POSTGRES:
+            trans = '{0} = MAKE_TIMESTAMP(' \
+                    'DATE_PART(\'year\', {0})::int, ' \
+                    '1, ' \
+                    '1, ' \
+                    'DATE_PART(\'hour\', {0})::int, ' \
+                    'DATE_PART(\'minute\', {0})::int, ' \
+                    'DATE_PART(\'second\', {0})::double precision)'.format(column)
+    
+        elif sql_flavor == SQLFlavor.VERTICA:
             trans = '{0} = MAKE_TIMESTAMP(' \
                     'DATE_PART(\'year\', {0})::int, ' \
                     '1, ' \

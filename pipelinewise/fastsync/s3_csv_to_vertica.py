@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-import multiprocessing
 import os
 import sys
+import multiprocessing
 from argparse import Namespace
 from datetime import datetime
 from functools import partial
 from typing import Union
 
-from pipelinewise.logger import Logger
-from commons import utils
-from commons.tap_s3_csv import FastSyncTapS3Csv
-from commons.target_vertica import FastSyncTargetVertica
-import vertica_python #importing verticas connector
+from ..logger import Logger
+from .commons import utils
+from .commons.tap_s3_csv import FastSyncTapS3Csv
+from .commons.target_vertica import FastSyncTargetVertica
 
 LOGGER = Logger().get_logger(__name__)
 
@@ -24,7 +23,7 @@ REQUIRED_CONFIG_KEYS = {
         'host',
         'port',
         'user',
-        'password'
+        'password',
     ]
 }
 
@@ -32,17 +31,15 @@ LOCK = multiprocessing.Lock()
 
 
 def tap_type_to_target_type(csv_type):
-    """Data type mapping from S3 csv to Vertica"""
+    """Data type mapping from S3 csv to vertica"""
 
-    # tap to target mapping of types. 
     return {
         'integer': 'INTEGER',
-        'number': 'NUMBER',
+        'number': 'NUMERIC',
         'string': 'VARCHAR',
-        'boolean': 'VARCHAR',  # The guess sometimes can be wrong, we'll use varchar for now.
+        'boolean': 'BOOLEAN',  # The guess sometimes can be wrong, we'll use varchar for now.
         'date': 'DATE',  # The guess sometimes can be wrong, we'll use varchar for now.
-
-        'date_override': 'TIMESTAMP'    # Column type to use when date_override defined in YAML
+        'date_override': 'TIMESTAMP'  # Column type to use when date_override defined in YAML
     }.get(csv_type, 'VARCHAR')
 
 
@@ -52,7 +49,8 @@ def sync_table(table_name: str, args: Namespace) -> Union[bool, str]:
     vertica = FastSyncTargetVertica(args.target, args.transform)
 
     try:
-        filename = utils.gen_export_filename(tap_id=args.target.get('tap_id'), table=table_name)
+        filename = utils.gen_export_filename(
+            tap_id=args.target.get('tap_id'), table=table_name)
         filepath = os.path.join(args.temp_dir, filename)
 
         target_schema = utils.get_target_schema(args.target, table_name)
@@ -67,25 +65,26 @@ def sync_table(table_name: str, args: Namespace) -> Union[bool, str]:
         # Creating temp table in vertica
         vertica.drop_table(target_schema, table_name, is_temporary=True)
         vertica.create_table(target_schema,
-                              table_name,
-                              vertica_columns,
-                              primary_key,
-                              is_temporary=True,
-                              sort_columns=True)
+                             table_name,
+                             vertica_columns,
+                             primary_key,
+                             is_temporary=True,
+                             sort_columns=True)
 
-        # Load into Vertica table
-        vertica.copy_to_table(filepath, target_schema, table_name, size_bytes, is_temporary=True, skip_csv_header=True)
+        # Load into vertica table
+        vertica.copy_to_table(filepath, target_schema, table_name,
+                              size_bytes, is_temporary=True, skip_csv_header=True)
         os.remove(filepath)
 
         # Obfuscate columns
-        # @TODO - Implement util
         vertica.obfuscate_columns(target_schema, table_name, is_temporary=True)
 
-        # Create target table and swap with the temp table in Vertica
+        # Create target table and swap with the temp table in vertica
         vertica.swap_tables(target_schema, table_name)
 
         # Get bookmark
-        bookmark = utils.get_bookmark_for_table(table_name, args.properties, s3_csv)
+        bookmark = utils.get_bookmark_for_table(
+            table_name, args.properties, s3_csv)
 
         # Save bookmark to singer state file
         # Lock to ensure that only one process writes the same state file at a time
@@ -97,8 +96,10 @@ def sync_table(table_name: str, args: Namespace) -> Union[bool, str]:
 
         # Table loaded, grant select on all tables in target schema
         grantees = utils.get_grantees(args.target, table_name)
-        utils.grant_privilege(target_schema, grantees, vertica.grant_usage_on_schema)
-        utils.grant_privilege(target_schema, grantees, vertica.grant_select_on_schema)
+        utils.grant_privilege(target_schema, grantees,
+                              vertica.grant_usage_on_schema)
+        utils.grant_privilege(target_schema, grantees,
+                              vertica.grant_select_on_schema)
 
         return True
 
@@ -110,7 +111,6 @@ def sync_table(table_name: str, args: Namespace) -> Union[bool, str]:
 def main_impl():
     """Main sync logic"""
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    print('args', args)
     pool_size = utils.get_pool_size(args.tap)
     start_time = datetime.now()
 
@@ -125,8 +125,7 @@ def main_impl():
         -------------------------------------------------------
         """, args.tables, len(args.tables), pool_size)
 
-    # Create target schemas sequentially, Postgres doesn't like it running in parallel
-    # @TODO - Determine if Vertica is ok with parallelism
+    # Create target schemas sequentially, vertica doesn't like it running in parallel
     vertica_target = FastSyncTargetVertica(args.target, args.transform)
     vertica_target.create_schemas(args.tables)
 
@@ -162,5 +161,3 @@ def main():
     except Exception as exc:
         LOGGER.critical(exc)
         raise exc
-
-#main() to run test directly

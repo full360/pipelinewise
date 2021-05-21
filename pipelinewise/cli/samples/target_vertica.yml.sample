@@ -1,0 +1,23 @@
+---
+
+# ------------------------------------------------------------------------------
+# General Properties
+# ------------------------------------------------------------------------------
+id: "vertica"                       # Unique identifier of the target
+name: "Vertica Data Warehouse"      # Name of the target
+type: "target-vertica"              # !! THIS SHOULD NOT CHANGE !!
+
+
+# ------------------------------------------------------------------------------
+# Target - Data Warehouse connection details
+# ------------------------------------------------------------------------------
+db_conn:
+  host: "<HOST>"                          # Vertica host
+  port: 5432                              # Vertica port
+  user: "<USER>"                          # Vertica user
+  password: "<PASSWORD>"                  # Plain string or vault encrypted
+  dbname: "<DB_NAME>"                     # Vertica database name
+  #ssl: "true"                         # Optional: Using SSL via vertica sslmode 'require' option.
+                                       #           If the server does not accept SSL connections or the client
+                                       #           certificate is not recognized the connection will fail
+

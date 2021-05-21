@@ -14,7 +14,7 @@ from singer.utils import strptime_with_tz
 from singer_encodings import csv as singer_encodings_csv
 
 from .utils import retry_pattern
-from pipelinewise.utils import safe_column_name
+from ...utils import safe_column_name
 
 LOGGER = logging.getLogger(__name__)
 

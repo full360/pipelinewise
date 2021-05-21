@@ -27,7 +27,7 @@ cd dev-project
 ../tests/db/target_postgres.sh
 
 # Install PipelineWise in the container
-../install.sh --acceptlicenses --nousage --connectors=target-snowflake,target-postgres,tap-mysql,tap-postgres,tap-mongodb,transform-field,tap-s3-csv
+../install.sh --acceptlicenses --nousage --connectors=target-snowflake,target-postgres,target-vertica,tap-mysql,tap-postgres,tap-mongodb,transform-field,tap-s3-csv
 if [[ $? != 0 ]]; then
     echo
     echo "ERROR: Docker container not started. Failed to install one or more PipelineWise components."
@@ -50,6 +50,7 @@ echo "   - PostgreSQL server with test database  (From host: localhost:${TAP_POS
 echo "   - MariaDB server with test database     (From host: localhost:${TAP_MYSQL_PORT_ON_HOST} - From CLI: ${TAP_MYSQL_HOST}:${TAP_MYSQL_PORT})"
 echo "   - MongoDB replicaSet server with test database (From host: localhost:${TAP_MONGODB_PORT_ON_HOST} - From CLI: ${TAP_MONGODB_HOST}:${TAP_MONGODB_PORT})"
 echo "   - PostgreSQL server with empty database (From host: localhost:${TARGET_POSTGRES_PORT_ON_HOST} - From CLI: ${TARGET_POSTGRES_HOST}:${TARGET_POSTGRES_PORT})"
+echo "   - Vertica server with empty database (From host: localhost:${TARGET_VERTICA_PORT_ON_HOST} - From CLI: ${TARGET_VERTICA_HOST}:${TARGET_VERTICA_PORT})"
 echo "(For database credentials check .env file)"
 echo
 echo

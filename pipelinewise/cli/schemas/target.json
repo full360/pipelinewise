@@ -137,6 +137,33 @@
         "dbname"
       ]
     },
+    "db_conn_target_vertica": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "user": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "dbname": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "host",
+        "port",
+        "user",
+        "password",
+        "dbname"
+      ]
+    },
     "db_conn_target_s3_csv": {
       "type": "object",
       "properties": {
@@ -193,6 +220,7 @@
         "target-snowflake",
         "target-redshift",
         "target-postgres",
+        "target-vertica",
         "target-s3-csv"
       ]
     },
@@ -206,6 +234,9 @@
         },
         {
           "$ref": "#/definitions/db_conn_target_postgres"
+        },
+        {
+          "$ref": "#/definitions/db_conn_target_vertica"
         },
         {
           "$ref": "#/definitions/db_conn_target_s3_csv"

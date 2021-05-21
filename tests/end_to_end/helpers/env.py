@@ -80,12 +80,12 @@ class E2EEnv:
             'TAP_MONGODB': {
                 'template_patterns': ['tap_postgres'],
                 'vars': {
-                    'HOST': {'value': os.environ.get('TAP_MONGODB_HOST'), 'required': True},
-                    'PORT': {'value': os.environ.get('TAP_MONGODB_PORT'), 'required': True},
-                    'USER': {'value': os.environ.get('TAP_MONGODB_USER'), 'required': True},
-                    'PASSWORD': {'value': os.environ.get('TAP_MONGODB_PASSWORD'), 'required': True},
-                    'DB': {'value': os.environ.get('TAP_MONGODB_DB'), 'required': True},
-                    'AUTH_DB': {'value': 'admin', 'required': True}
+                    'HOST'      : {'value': os.environ.get('TAP_MONGODB_HOST'), 'required': True},
+                    'PORT'      : {'value': os.environ.get('TAP_MONGODB_PORT'), 'required': True},
+                    'USER'      : {'value': os.environ.get('TAP_MONGODB_USER'), 'required': True},
+                    'PASSWORD'  : {'value': os.environ.get('TAP_MONGODB_PASSWORD'), 'required': True},
+                    'DB'        : {'value': os.environ.get('TAP_MONGODB_DB'), 'required': True},
+                    'AUTH_DB'   : {'value': 'admin', 'required': True}
                 }
             },
             # ------------------------------------------------------------------
@@ -112,6 +112,16 @@ class E2EEnv:
                     'USER'      : {'value': os.environ.get('TARGET_POSTGRES_USER')},
                     'PASSWORD'  : {'value': os.environ.get('TARGET_POSTGRES_PASSWORD')},
                     'DB'        : {'value': os.environ.get('TARGET_POSTGRES_DB')},
+                }
+            },
+            'TARGET_VERTICA': {
+                'template_patterns': ['target_vertica', 'to_v'],
+                'vars': {
+                    'HOST'      : {'value': os.environ.get('TARGET_VERTICA_HOST')},
+                    'PORT'      : {'value': os.environ.get('TARGET_VERTICA_PORT')},
+                    'USER'      : {'value': os.environ.get('TARGET_VERTICA_USER')},
+                    'PASSWORD'  : {'value': os.environ.get('TARGET_VERTICA_PASSWORD')},
+                    'DB'        : {'value': os.environ.get('TARGET_VERTICA_DB')},
                 }
             },
             # ------------------------------------------------------------------
@@ -182,6 +192,7 @@ class E2EEnv:
         self.env['TARGET_POSTGRES']['is_configured'] = self._is_env_connector_configured('TARGET_POSTGRES')
         self.env['TARGET_REDSHIFT']['is_configured'] = self._is_env_connector_configured('TARGET_REDSHIFT')
         self.env['TARGET_SNOWFLAKE']['is_configured'] = self._is_env_connector_configured('TARGET_SNOWFLAKE')
+        self.env['TARGET_VERTICA']['is_configured'] = self._is_env_connector_configured('TARGET_VERTICA')
 
     def _get_conn_env_var(self, connector, key):
         """Get the value of a specific variable in the self.env dict"""
@@ -200,7 +211,7 @@ class E2EEnv:
         for env_conn in env_conns:
             for key, value in self.env[env_conn]['vars'].items():
                 # If value not defined and is not optional
-                if not value['value'] and not value.get('optional'):
+                if not value['value'] and not value.get('optional') and value['value'] != '':
                     # Value not defined but the entirely component is optional
                     if self.env[env_conn].get('optional'):
                         return False
@@ -318,6 +329,15 @@ class E2EEnv:
                                      user=self._get_conn_env_var('TARGET_REDSHIFT', 'USER'),
                                      password=self._get_conn_env_var('TARGET_REDSHIFT', 'PASSWORD'),
                                      database=self._get_conn_env_var('TARGET_REDSHIFT', 'DBNAME'))
+    
+    def run_query_target_vertica(self, query: object) -> object:
+        """Run and SQL query in target vertica database."""
+        return db.run_query_vertica(query,
+                                    host=self._get_conn_env_var('TARGET_VERTICA', 'HOST'),
+                                    port=self._get_conn_env_var('TARGET_VERTICA', 'PORT'),
+                                    user=self._get_conn_env_var('TARGET_VERTICA', 'USER'),
+                                    password=self._get_conn_env_var('TARGET_VERTICA', 'PASSWORD'),
+                                    database=self._get_conn_env_var('TARGET_VERTICA', 'DB'))
 
     # pylint: disable=unnecessary-pass
     def run_query_tap_s3_csv(self, file):
@@ -366,7 +386,6 @@ class E2EEnv:
         Creating initial tables is defined in Docker entrypoint.sh"""
         db_script = os.path.join(DIR, '..', '..', 'db', 'tap_mongodb.sh')
         self._run_command(db_script)
-
 
     def setup_tap_s3_csv(self):
         """Upload test input files to S3 to be prapared for test run"""
@@ -423,3 +442,11 @@ class E2EEnv:
 
         # Clean config directory
         shutil.rmtree(os.path.join(CONFIG_DIR, 'snowflake'), ignore_errors=True)
+    
+    def setup_target_vertica(self):
+        """Clean vertica target database and prepare for test run"""
+        # self.run_query_target_vertica('CREATE EXTENSION IF NOT EXISTS vertica')
+        self.run_query_target_vertica('DROP SCHEMA IF EXISTS ppw_e2e_tap_s3_csv CASCADE')
+
+        # Clean config directory
+        shutil.rmtree(os.path.join(CONFIG_DIR, 'vertica'), ignore_errors=True)

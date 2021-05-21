@@ -1,0 +1,19 @@
+---
+
+# ------------------------------------------------------------------------------
+# General Properties
+# ------------------------------------------------------------------------------
+id: "vertica"                         # Unique identifier of the target
+name: "Vertica Data Warehouse"        # Name of the target
+type: "target-vertica"                # !! THIS SHOULD NOT CHANGE !!
+
+
+# ------------------------------------------------------------------------------
+# Target - Data Warehouse connection details
+# ------------------------------------------------------------------------------
+db_conn:
+  host: "${TARGET_VERTICA_HOST}"           # vertica host
+  port: ${TARGET_VERTICA_PORT}             # vertica port
+  user: "${TARGET_VERTICA_USER}"           # vertica user
+  password: "${TARGET_VERTICA_PASSWORD}"   # Plain string or vault encrypted
+  dbname: "${TARGET_VERTICA_DB}"           # vertica database name

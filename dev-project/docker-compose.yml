@@ -30,6 +30,13 @@ services:
       TARGET_POSTGRES_PASSWORD: ${TARGET_POSTGRES_PASSWORD}
       TARGET_POSTGRES_DB: ${TARGET_POSTGRES_DB}
 
+      TARGET_VERTICA_HOST: db_vertica
+      TARGET_VERTICA_PORT: ${TARGET_VERTICA_PORT}
+      TARGET_VERTICA_PORT_ON_HOST: ${TARGET_VERTICA_PORT_ON_HOST}
+      TARGET_VERTICA_USER: ${TARGET_VERTICA_USER}
+      TARGET_VERTICA_PASSWORD: ${TARGET_VERTICA_PASSWORD}
+      TARGET_VERTICA_DB: ${TARGET_VERTICA_DB}
+
       TAP_MONGODB_HOST: db_mongo_source
       TAP_MONGODB_PORT: ${TAP_MONGODB_PORT}
       TAP_MONGODB_PORT_ON_HOST: ${TAP_MONGODB_PORT_ON_HOST}
@@ -50,6 +57,7 @@ services:
       - db_postgres_source
       - db_mysql_source
       - db_postgres_dwh
+      - db_vertica
       - db_mongo_source
     networks:
       - pipelinewise_network
@@ -115,6 +123,20 @@ services:
       POSTGRES_USER: ${TARGET_POSTGRES_USER}
       POSTGRES_PASSWORD: ${TARGET_POSTGRES_PASSWORD}
       POSTGRES_DB: ${TARGET_POSTGRES_DB}
+    networks:
+      - pipelinewise_network
+  
+  ### Target containers
+  # Vertica service container used as test target database
+  db_vertica:
+    image: jbfavre/vertica
+    container_name: pipelinewise_dev_vertica
+    ports:
+      - ${TARGET_VERTICA_PORT_ON_HOST}:${TARGET_VERTICA_PORT}
+    environment:
+      VERTICA_USER: ${TARGET_VERTICA_USER}
+      VERTICA_PASSWORD: ${TARGET_VERTICA_PASSWORD}
+      VERTICA_DB: ${TARGET_VERTICA_DB}
     networks:
       - pipelinewise_network
 

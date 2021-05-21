@@ -4,9 +4,11 @@ import psycopg2
 import psycopg2.extras
 import pymongo
 import pymysql
+import vertica_python
 import snowflake.connector
 
 from pymongo.database import Database
+
 
 # pylint: disable=too-many-arguments
 def run_query_postgres(query, host, port, user, password, database):
@@ -23,6 +25,22 @@ def run_query_postgres(query, host, port, user, password, database):
             if cur.rowcount > 0 and cur.description:
                 result_rows = cur.fetchall()
     return result_rows
+
+
+def run_query_vertica(query, host, port, user, password, database):
+    """Run and SQL query in a vertica database."""
+    with vertica_python.connect(host=host,
+                          port=port,
+                          user=user,
+                          password=password,
+                          database=database,
+                          autocommit=True) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            fetchall = cur.fetchall()
+            if cur.rowcount > 0 and cur.description:
+                return fetchall
+    return []
 
 
 def run_query_mysql(query, host, port, user, password, database):
@@ -62,16 +80,16 @@ def run_query_redshift(query, host, port, user, password, database):
     return run_query_postgres(query, host, port, user, password, database)
 
 
-def sql_get_columns_for_table(table_schema: str, table_name: str) -> list:
+def sql_get_columns_for_table(table_schema: str, table_name: str, default_schema: str) -> list:
     """Generate an SQL command that returns the list of column of a specific
-    table. Compatible with MySQL/ MariaDB/ Postgres and Snowflake
+    table. Compatible with MySQL/ MariaDB/ Postgres/ Vertica and Snowflake
 
     table_schema and table_name can be lowercase and uppercase strings.
     It's using the IN clause to avoid transforming the entire
-    information_schema.columns table"""
+    information_schema.columns/ v_catalog.columns table"""    
     return f"""
     SELECT column_name
-      FROM information_schema.columns
+      FROM {default_schema}.columns
      WHERE table_schema IN ('{table_schema.upper()}', '{table_schema.lower()}')
        AND table_name IN ('{table_name.upper()}', '{table_name.lower()}')"""
 

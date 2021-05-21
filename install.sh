@@ -183,6 +183,7 @@ DEFAULT_CONNECTORS=(
     target-snowflake
     target-redshift
     target-postgres
+    target-vertica
     transform-field
 )
 EXTRA_CONNECTORS=(
